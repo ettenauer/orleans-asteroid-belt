@@ -1,0 +1,8 @@
+version: '3.4'
+
+services:
+  orleans.asteroidbelt.silo:
+    image: ${DOCKER_REGISTRY-}orleansasteroidbeltsilo
+    build:
+      context: ../
+      dockerfile: source/Orleans.AsteroidBelt.Silo/Dockerfile
