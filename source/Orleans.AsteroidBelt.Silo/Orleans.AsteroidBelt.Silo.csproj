@@ -17,14 +17,11 @@
     <PackageReference Include="Microsoft.Orleans.OrleansProviders" Version="3.5.0" />
     <PackageReference Include="Microsoft.Orleans.Server" Version="3.5.0" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.11.1" />
+    <PackageReference Include="SignalR.Orleans" Version="2.1.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Orleans.AsteriodBelt.Grains\Orleans.AsteriodBelt.Grains.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Hubs\" />
   </ItemGroup>
 
 </Project>

@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Orleans.AsteriodBelt.Grains.DomainObjects;
 using Orleans.Runtime;
 using Orleans.Streams;
 using System;
@@ -8,8 +9,6 @@ namespace Orleans.AsteriodBelt.Grains;
 
 public class GravityGrain : Grain, IGravityGrain, IRemindable
 {
-    public static Guid StreamId = Guid.NewGuid();
-
     private readonly ILogger<GravityGrain> logger;
     private IAsyncStream<Move> stream;
 
@@ -26,9 +25,9 @@ public class GravityGrain : Grain, IGravityGrain, IRemindable
             TimeSpan.FromSeconds(5),
             TimeSpan.FromSeconds(15));
 
-        var streamProvider = GetStreamProvider("gravityField");
+        var streamProvider = GetStreamProvider(StreamConstants.StreamProvider);
 
-        stream = streamProvider.GetStream<Move>(StreamId, "default");
+        stream = streamProvider.GetStream<Move>(StreamConstants.MoveStreamId, StreamConstants.MoveStreamNamespace);
 
         return base.OnActivateAsync(); 
     }

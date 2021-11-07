@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Orleans.AsteriodBelt.Grains;
+namespace Orleans.AsteriodBelt.Grains.DomainObjects;
 
 public sealed class AsteroidMotion
 {

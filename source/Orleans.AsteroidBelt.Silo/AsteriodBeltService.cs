@@ -12,7 +12,7 @@ public class AsteriodBeltService : IHostedService
     //Note: these asteriods should be distributed within the akka cluster
     private static int[] AsteriodIds = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
 
-    private static int GravityId = 0;
+    private const int GravityId = 1;
 
     private readonly IGrainFactory factory;
     private readonly ILogger<AsteriodBeltService> logger;
@@ -28,11 +28,15 @@ public class AsteriodBeltService : IHostedService
         await factory.GetGrain<IGravityGrain>(GravityId).StartKeepAliveAsync();
 
         foreach (var id in AsteriodIds)
-            await factory.GetGrain<IAsteriodGrain>(id).StartKeepAliveAsync();        
+            await factory.GetGrain<IAsteriodGrain>(id).StartKeepAliveAsync();
+
+        logger.LogInformation($"{nameof(AsteriodBeltService)} started");
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
+        logger.LogInformation($"{nameof(AsteriodBeltService)} stopped");
+
         return Task.CompletedTask;
     }
 }
