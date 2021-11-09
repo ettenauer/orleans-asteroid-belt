@@ -23,7 +23,7 @@ public class GravityGrain : Grain, IGravityGrain, IRemindable
             MoveAsync,
             Pulse.Instance,
             TimeSpan.FromSeconds(5),
-            TimeSpan.FromSeconds(15));
+            TimeSpan.FromSeconds(5));
 
         var streamProvider = GetStreamProvider(StreamConstants.StreamProvider);
 

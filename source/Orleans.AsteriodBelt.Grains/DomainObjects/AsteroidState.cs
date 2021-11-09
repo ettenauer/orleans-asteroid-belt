@@ -2,7 +2,7 @@
 
 public class AsteroidState
 {
-    public string AsteroidId { get; init; }
+    public long AsteroidId { get; init; }
 
     public double X { get; init; }
 

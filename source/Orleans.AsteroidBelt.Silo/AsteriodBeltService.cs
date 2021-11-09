@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Orleans.AsteriodBelt.Grains;
+using Orleans.AsteroidBelt.Silo.Hubs;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,11 +16,13 @@ public class AsteriodBeltService : IHostedService
     private const int GravityId = 1;
 
     private readonly IGrainFactory factory;
+    private readonly IAsteriodHubAdapter hubAdapter;
     private readonly ILogger<AsteriodBeltService> logger;
 
-    public AsteriodBeltService(IGrainFactory factory, ILogger<AsteriodBeltService> logger)
+    public AsteriodBeltService(IGrainFactory factory, IAsteriodHubAdapter hubAdapter, ILogger<AsteriodBeltService> logger)
     {
         this.factory = factory ?? throw new ArgumentNullException(nameof(factory));
+        this.hubAdapter = hubAdapter ?? throw new ArgumentNullException(nameof(hubAdapter));
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -29,6 +32,8 @@ public class AsteriodBeltService : IHostedService
 
         foreach (var id in AsteriodIds)
             await factory.GetGrain<IAsteriodGrain>(id).StartKeepAliveAsync();
+
+        await hubAdapter.ConnectStreamAsync();
 
         logger.LogInformation($"{nameof(AsteriodBeltService)} started");
     }
