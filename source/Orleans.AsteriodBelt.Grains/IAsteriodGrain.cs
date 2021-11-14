@@ -4,6 +4,6 @@ namespace Orleans.AsteriodBelt.Grains;
 
 public interface IAsteriodGrain : IGrainWithIntegerKey
 {
-    Task StartKeepAliveAsync();
+    Task MoveAsync();
 }
 

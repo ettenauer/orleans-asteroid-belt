@@ -1,8 +1,33 @@
-version: '3.4'
+version: '3.7'
 
 services:
-  orleans.asteroidbelt.silo:
+  node1:
     image: ${DOCKER_REGISTRY-}orleansasteroidbeltsilo
     build:
       context: ../
       dockerfile: source/Orleans.AsteroidBelt.Silo/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Redis
+      - ASPNETCORE_URLS=http://+:80
+      - CONNECTIONSTRING=redis:6379
+    ports:
+     - "5001:80"
+    depends_on:
+     - redis
+  node2:
+    image: ${DOCKER_REGISTRY-}orleansasteroidbeltsilo
+    build:
+      context: ../
+      dockerfile: source/Orleans.AsteroidBelt.Silo/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Redis
+      - ASPNETCORE_URLS=http://+:80
+      - CONNECTIONSTRING=redis:6379
+    ports:
+     - "5002:80"
+    depends_on:
+     - node1
+  redis:
+    image: "redis:alpine"
+    ports:
+     - 6379:6379

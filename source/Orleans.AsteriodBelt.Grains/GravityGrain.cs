@@ -1,16 +1,16 @@
 ﻿using Microsoft.Extensions.Logging;
-using Orleans.AsteriodBelt.Grains.DomainObjects;
 using Orleans.Runtime;
 using Orleans.Streams;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Orleans.AsteriodBelt.Grains;
 
 public class GravityGrain : Grain, IGravityGrain, IRemindable
 {
+    private readonly HashSet<int> asteriods = new();
     private readonly ILogger<GravityGrain> logger;
-    private IAsyncStream<Move> stream;
 
     public GravityGrain(ILogger<GravityGrain> logger)
     {
@@ -25,10 +25,6 @@ public class GravityGrain : Grain, IGravityGrain, IRemindable
             TimeSpan.FromSeconds(5),
             TimeSpan.FromSeconds(5));
 
-        var streamProvider = GetStreamProvider(StreamConstants.StreamProvider);
-
-        stream = streamProvider.GetStream<Move>(StreamConstants.MoveStreamId, StreamConstants.MoveStreamNamespace);
-
         return base.OnActivateAsync(); 
     }
 
@@ -39,16 +35,22 @@ public class GravityGrain : Grain, IGravityGrain, IRemindable
         return Task.CompletedTask;
     }
 
-    public async Task StartKeepAliveAsync()
+    public Task RegistryAsteriodAsync(int asteriodId)
     {
-        await RegisterOrUpdateReminder("GravityKeepAlive", TimeSpan.FromSeconds(5), TimeSpan.FromMinutes(1));
+        asteriods.Add(asteriodId);
+
+        return Task.CompletedTask;
     }
 
-    private Task MoveAsync(object state)
+    private async Task MoveAsync(object state)
     {
-        logger.LogInformation("Gravity Pulse send");
+        logger.LogInformation("Gravity Pulse");
 
-        return stream.OnNextAsync(new Move());
+        foreach (var asteriodId in asteriods)
+        {
+            var asteriodGrain = GrainFactory.GetGrain<IAsteriodGrain>(asteriodId);
+            await asteriodGrain.MoveAsync();
+        }
     }
 
     private class Pulse

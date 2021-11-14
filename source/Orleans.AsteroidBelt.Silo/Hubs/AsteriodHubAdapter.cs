@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Logging;
 using Orleans.AsteriodBelt.Grains;
 using Orleans.AsteriodBelt.Grains.DomainObjects;
 using Orleans.Streams;
+using SignalR.Orleans.Core;
 using System;
 using System.Threading.Tasks;
 
@@ -9,19 +11,19 @@ namespace Orleans.AsteroidBelt.Silo.Hubs;
 
 public class AsteroidHubAdapter : IAsyncObserver<AsteroidState>, IAsteriodHubAdapter
 {
-    private readonly IHubContext<AsteroidHub> hub;
-    private readonly IClusterClient clusterClient;
+    private HubContext<AsteroidHub> hub;
+    private readonly ILogger<AsteroidHubAdapter> logger;
 
-    public AsteroidHubAdapter(IClusterClient clusterClient, IHubContext<AsteroidHub> hub)
+    public AsteroidHubAdapter(ILogger<AsteroidHubAdapter> logger)
     {
-        this.clusterClient = clusterClient;
-        this.hub = hub;
+        this.logger = logger;
     }
 
-    public async Task ConnectStreamAsync()
+    public async Task ConnectStreamAsync(IClusterClient clusterClient)
     {
-        var streamProvider = clusterClient.GetStreamProvider(StreamConstants.StreamProvider);
-        var stateStream = streamProvider.GetStream<AsteroidState>(StreamConstants.StateStreamId, StreamConstants.StateStreamNamespace);
+        var streamProvider = clusterClient.GetStreamProvider(Constants.StreamProvider);
+        hub = clusterClient.GetHub<AsteroidHub>();
+        var stateStream = streamProvider.GetStream<AsteroidState>(Constants.StateStreamId, Constants.StateStreamNamespace);
         await stateStream.SubscribeAsync(this);
     }
 
@@ -37,7 +39,9 @@ public class AsteroidHubAdapter : IAsyncObserver<AsteroidState>, IAsteriodHubAda
 
     public async Task OnNextAsync(AsteroidState item, StreamSequenceToken token = null)
     {
-        await hub.Clients.All.SendAsync("writeState", new HubMessageEnvelope
+        logger.LogInformation($"{nameof(AsteroidHubAdapter)} received stream item -> {item.AsteroidId} for publishing");
+
+        await hub.Group(Constants.HubGroupId).Send("writeState", new HubMessageEnvelope
         {
             Id = item.AsteroidId.ToString(),
             Message = $"|ID: {item.AsteroidId} | X: {item.X} | Y: {item.Y} | Weight: {item.Weight} | Destroyed: {item.Destroyed}|"

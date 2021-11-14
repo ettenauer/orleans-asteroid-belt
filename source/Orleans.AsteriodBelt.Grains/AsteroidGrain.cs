@@ -1,18 +1,16 @@
 ﻿using Microsoft.Extensions.Logging;
 using Orleans.AsteriodBelt.Grains.DomainObjects;
-using Orleans.Runtime;
 using Orleans.Streams;
 using System;
 using System.Threading.Tasks;
 
 namespace Orleans.AsteriodBelt.Grains;
 
-public class AsteroidGrain : Grain, IAsyncObserver<Move>, IAsyncObserver<AsteroidState>, IAsteriodGrain, IRemindable
+public class AsteroidGrain : Grain, IAsyncObserver<AsteroidState>, IAsteriodGrain
 {
     private const int DestructionRadius = 5;
 
     private readonly ILogger<AsteroidGrain> logger;
-    private IAsyncStream<Move> moveStream;
     private IAsyncStream<AsteroidState> stateStream;
     private readonly AsteroidMotion motion;
     private readonly int weight;
@@ -22,19 +20,15 @@ public class AsteroidGrain : Grain, IAsyncObserver<Move>, IAsyncObserver<Asteroi
     public AsteroidGrain(ILogger<AsteroidGrain> logger)
     {
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
-
-        this.motion = new AsteroidMotion();
-        this.weight = new Random(Guid.NewGuid().GetHashCode()).Next(20, 50);
+        motion = new AsteroidMotion();
+        weight = new Random(Guid.NewGuid().GetHashCode()).Next(20, 50);
     }
 
     public async override Task OnActivateAsync()
     {
-        var streamProvider = GetStreamProvider(StreamConstants.StreamProvider);
+        var streamProvider = GetStreamProvider(Constants.StreamProvider);
 
-        moveStream = streamProvider.GetStream<Move>(StreamConstants.MoveStreamId, StreamConstants.MoveStreamNamespace);
-        await moveStream.SubscribeAsync(this);
-
-        stateStream = streamProvider.GetStream<AsteroidState>(StreamConstants.StateStreamId, StreamConstants.MoveStreamNamespace);
+        stateStream = streamProvider.GetStream<AsteroidState>(Constants.StateStreamId, Constants.StateStreamNamespace);
         await stateStream.SubscribeAsync(this);
 
         await base.OnActivateAsync();
@@ -44,7 +38,7 @@ public class AsteroidGrain : Grain, IAsyncObserver<Move>, IAsyncObserver<Asteroi
     
     public Task OnErrorAsync(Exception ex) => Task.CompletedTask;
     
-    public Task OnNextAsync(Move item, StreamSequenceToken token = null)
+    public Task MoveAsync()
     {
         var (x,y) = motion.Move();
 
@@ -73,17 +67,5 @@ public class AsteroidGrain : Grain, IAsyncObserver<Move>, IAsyncObserver<Asteroi
         }
 
         return Task.CompletedTask;
-    }
-
-    public Task ReceiveReminder(string reminderName, TickStatus status)
-    {
-        logger.LogInformation($"AsteriodGrain {IdentityString} is alive");
-
-        return Task.CompletedTask;
-    }
-
-    public async Task StartKeepAliveAsync()
-    {
-        await RegisterOrUpdateReminder($"AsteriodKeepAlive-{IdentityString}", TimeSpan.FromSeconds(5), TimeSpan.FromMinutes(1));
     }
 }

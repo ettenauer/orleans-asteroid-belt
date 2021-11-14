@@ -2,7 +2,10 @@
 using Microsoft.Extensions.Logging;
 using Orleans.AsteriodBelt.Grains;
 using Orleans.AsteroidBelt.Silo.Hubs;
+using Orleans.Configuration;
+using Orleans.Hosting;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,34 +18,36 @@ public class AsteriodBeltService : IHostedService
 
     private const int GravityId = 1;
 
-    private readonly IGrainFactory factory;
     private readonly IAsteriodHubAdapter hubAdapter;
     private readonly ILogger<AsteriodBeltService> logger;
+    private readonly IClusterClient client;
 
-    public AsteriodBeltService(IGrainFactory factory, IAsteriodHubAdapter hubAdapter, ILogger<AsteriodBeltService> logger)
+    public AsteriodBeltService(IClusterClient clusterClient, IAsteriodHubAdapter hubAdapter, ILogger<AsteriodBeltService> logger)
     {
-        this.factory = factory ?? throw new ArgumentNullException(nameof(factory));
         this.hubAdapter = hubAdapter ?? throw new ArgumentNullException(nameof(hubAdapter));
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        this.client = clusterClient;
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        await factory.GetGrain<IGravityGrain>(GravityId).StartKeepAliveAsync();
+        await client.Connect();
+
+        var gravity = client.GetGrain<IGravityGrain>(GravityId);
 
         foreach (var id in AsteriodIds)
-            await factory.GetGrain<IAsteriodGrain>(id).StartKeepAliveAsync();
+            await gravity.RegistryAsteriodAsync(id);
 
-        await hubAdapter.ConnectStreamAsync();
+        await hubAdapter.ConnectStreamAsync(client);
 
         logger.LogInformation($"{nameof(AsteriodBeltService)} started");
     }
 
-    public Task StopAsync(CancellationToken cancellationToken)
+    public async Task StopAsync(CancellationToken cancellationToken)
     {
         logger.LogInformation($"{nameof(AsteriodBeltService)} stopped");
 
-        return Task.CompletedTask;
+        await client.Close();
     }
 }
 

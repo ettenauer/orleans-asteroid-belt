@@ -8,13 +8,15 @@ using Orleans.AsteriodBelt.Grains;
 using Microsoft.AspNetCore.Builder;
 using Orleans.AsteroidBelt.Silo;
 using Orleans.AsteroidBelt.Silo.Hubs;
+using System;
+using Orleans.Configuration;
 
 var host = new HostBuilder()
   .ConfigureWebHostDefaults(webBuilder =>
   {
       webBuilder.ConfigureServices(services =>
       {
-          services.AddSignalR();
+          services.AddSignalR().AddOrleans();
           services.AddControllersWithViews();
       });
 
@@ -29,17 +31,74 @@ var host = new HostBuilder()
           });
       });
   })
-  .UseOrleans(siloBuilder =>
+  .UseOrleans((ctx, siloBuilder) =>
   {
-      siloBuilder.UseLocalhostClustering()
-        .UseInMemoryReminderService()
-        .ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(AsteroidGrain).Assembly).WithReferences())
-        .ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(GravityGrain).Assembly).WithReferences())
-        .AddMemoryGrainStorage("PubSubStore")
-        .AddSimpleMessageStreamProvider(StreamConstants.StreamProvider, options =>
-        {
-            options.FireAndForgetDelivery = true;
-        });
+      var connectionString = Environment.GetEnvironmentVariable("CONNECTIONSTRING");
+
+      if (ctx.HostingEnvironment.IsEnvironment("Redis"))
+      {
+          siloBuilder
+           .UseRedisClustering(options => options.ConnectionString = connectionString)
+           .AddRedisGrainStorage("PubSubStore", options => options.ConnectionString = connectionString)
+           .UseRedisReminderService(options => options.ConnectionString = connectionString)
+                  .Configure<ClusterOptions>(options =>
+                  {
+                      options.ClusterId = "orleans.asteriodbelt";
+                      options.ServiceId = "asteriodbelt.silo";
+                  })
+          .ConfigureEndpoints(siloPort: 11111, gatewayPort: 30000, listenOnAnyHostAddress: true)
+          .ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(AsteroidGrain).Assembly).WithReferences())
+          .ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(GravityGrain).Assembly).WithReferences())
+          //Note: we only use simple message stream for silo internal communication
+          .AddSimpleMessageStreamProvider(Constants.StreamProvider, options =>
+          {
+              options.FireAndForgetDelivery = true;
+          })
+          //Note: we use orleans backplane for SignalR, local states per silo are distributed over backplane to consumer
+          .UseSignalR()
+          .RegisterHub<AsteroidHub>();
+      }
+      else if (ctx.HostingEnvironment.IsEnvironment("Azure"))
+      {
+          siloBuilder
+           .UseAzureStorageClustering(options => options.ConnectionString = connectionString)            
+           .AddAzureTableGrainStorage(name: "PubSubStore", options =>
+            {
+                options.UseJson = true;
+                options.ConnectionString = connectionString;
+            })
+           .UseAzureTableReminderService(connectionString)
+                  .Configure<ClusterOptions>(options =>
+                  {
+                      options.ClusterId = "orleans.asteriodbelt";
+                      options.ServiceId = "asteriodbelt.silo";
+                  })
+          .ConfigureEndpoints(siloPort: 11111, gatewayPort: 30000, listenOnAnyHostAddress: true)
+          .ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(AsteroidGrain).Assembly).WithReferences())
+          .ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(GravityGrain).Assembly).WithReferences())
+          //Note: we only use simple message stream for silo internal communication
+          .AddSimpleMessageStreamProvider(Constants.StreamProvider, options =>
+          {
+              options.FireAndForgetDelivery = true;
+          })
+          //Note: we use orleans backplane for SignalR, local states per silo are distributed over backplane to consumer
+          .UseSignalR()
+          .RegisterHub<AsteroidHub>();
+      }
+      else
+      {
+          siloBuilder.UseLocalhostClustering()
+            .AddMemoryGrainStorage("PubSubStore")
+            .UseInMemoryReminderService()
+            .ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(AsteroidGrain).Assembly).WithReferences())
+            .ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(GravityGrain).Assembly).WithReferences())
+            .AddSimpleMessageStreamProvider(Constants.StreamProvider, options =>
+            {
+                options.FireAndForgetDelivery = true;
+            })
+            .UseSignalR()
+            .RegisterHub<AsteroidHub>();
+      }
   })
   .ConfigureLogging(logging =>
   {
