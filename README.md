@@ -18,6 +18,6 @@ The state information about the asteroids are visible on a status dashboard (def
 ## Run project locally via DOCKER-COMPOSE and VS-Studio
 * open https://github.com/ettenauer/orleans-asteroid-belt
 * select docker-compose as start up project and press run 
-* docker-compose will start three instances of AsteroidBelt.Silo 
+* docker-compose will start two instances of AsteroidBelt.Silo 
 * browse https://localhost:5001/ or https://localhost:5002/ to see status dashboard
 
