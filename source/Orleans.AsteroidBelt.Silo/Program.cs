@@ -61,11 +61,11 @@ var host = new HostBuilder()
       else if (ctx.HostingEnvironment.IsEnvironment("Azure"))
       {
           siloBuilder
-           .UseAzureStorageClustering(options => options.ConnectionString = connectionString)            
+           .UseAzureStorageClustering(options => options.ConfigureTableServiceClient(connectionString))            
            .AddAzureTableGrainStorage(name: "PubSubStore", options =>
             {
                 options.UseJson = true;
-                options.ConnectionString = connectionString;
+                options.ConfigureTableServiceClient(connectionString);
             })
            .UseAzureTableReminderService(connectionString)
                   .Configure<ClusterOptions>(options =>
