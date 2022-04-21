@@ -24,7 +24,7 @@
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.15.1" />
     <PackageReference Include="Orleans.Clustering.Redis" Version="3.2.1" />
     <PackageReference Include="Orleans.Persistence.Redis" Version="3.2.1" />
-    <PackageReference Include="Orleans.Reminders.Redis" Version="3.2.1" />
+    <PackageReference Include="Orleans.Reminders.Redis" Version="3.2.2" />
     <PackageReference Include="SignalR.Orleans" Version="2.1.0" />
 
   </ItemGroup>
