@@ -25,7 +25,7 @@
     <PackageReference Include="Orleans.Clustering.Redis" Version="3.2.2" />
     <PackageReference Include="Orleans.Persistence.Redis" Version="3.2.2" />
     <PackageReference Include="Orleans.Reminders.Redis" Version="3.2.2" />
-    <PackageReference Include="SignalR.Orleans" Version="2.1.0" />
+    <PackageReference Include="SignalR.Orleans" Version="2.2.0" />
 
   </ItemGroup>
 
