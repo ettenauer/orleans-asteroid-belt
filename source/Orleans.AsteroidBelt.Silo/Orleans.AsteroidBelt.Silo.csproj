@@ -23,7 +23,7 @@
     <PackageReference Include="Microsoft.Orleans.Streaming.AzureStorage" Version="3.6.5" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.17.0" />
     <PackageReference Include="Orleans.Clustering.Redis" Version="3.2.2" />
-    <PackageReference Include="Orleans.Persistence.Redis" Version="3.2.2" />
+    <PackageReference Include="Orleans.Persistence.Redis" Version="7.0.0" />
     <PackageReference Include="Orleans.Reminders.Redis" Version="3.2.2" />
     <PackageReference Include="SignalR.Orleans" Version="2.2.0" />
 
